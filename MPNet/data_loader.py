@@ -3,7 +3,6 @@ import torch.utils.data as data
 import os
 import pickle
 import numpy as np
-import nltk
 from PIL import Image
 import os.path
 import random
@@ -12,6 +11,8 @@ import torch.nn as nn
 import math
 
 # Environment Encoder
+
+dataset_path = '../dataset2'
 
 class Encoder(nn.Module):
 	def __init__(self):
@@ -26,24 +27,25 @@ class Encoder(nn.Module):
 def load_dataset(N=100,NP=4000):
 
 	Q = Encoder()
-	Q.load_state_dict(torch.load('../models/cae_encoder.pkl'))
+	Q.load_state_dict(torch.load('./models/cae_encoder.pkl'))
 	if torch.cuda.is_available():
 		Q.cuda()
 
-		
+	
 	obs_rep=np.zeros((N,28),dtype=np.float32)
 	for i in range(0,N):
 		#load obstacle point cloud
-		temp=np.fromfile('../../dataset/obs_cloud/obc'+str(i)+'.dat')
-		temp=temp.reshape(len(temp)/2,2)
+		temp=np.fromfile(dataset_path + '/obs_cloud/obc'+str(i)+'.dat')
+		temp=temp.reshape(int(len(temp)/2),2)
 		obstacles=np.zeros((1,2800),dtype=np.float32)
 		obstacles[0]=temp.flatten()
 		inp=torch.from_numpy(obstacles)
-		inp=Variable(inp).cuda()
+		if torch.cuda.is_available():
+			inp=Variable(inp).cuda()
 		output=Q(inp)
 		output=output.data.cpu()
 		obs_rep[i]=output.numpy()
-
+	print("obstacle point cloud loaded")
 
 
 	
@@ -52,26 +54,26 @@ def load_dataset(N=100,NP=4000):
 	path_lengths=np.zeros((N,NP),dtype=np.int8)
 	for i in range(0,N):
 		for j in range(0,NP):
-			fname='../../dataset/e'+str(i)+'/path'+str(j)+'.dat'
+			fname=dataset_path + '/e'+str(i)+'/path'+str(j)+'.dat'
 			if os.path.isfile(fname):
 				path=np.fromfile(fname)
-				path=path.reshape(len(path)/2,2)
+				path=path.reshape(int(len(path)/2),2)
 				path_lengths[i][j]=len(path)	
 				if len(path)> max_length:
 					max_length=len(path)
-			
+	print("calculated length of the longest trajectory successfully")
 
 	paths=np.zeros((N,NP,max_length,2), dtype=np.float32)   ## padded paths
 
 	for i in range(0,N):
 		for j in range(0,NP):
-			fname='../../dataset/e'+str(i)+'/path'+str(j)+'.dat'
+			fname=dataset_path + '/e'+str(i)+'/path'+str(j)+'.dat'
 			if os.path.isfile(fname):
 				path=np.fromfile(fname)
-				path=path.reshape(len(path)/2,2)
+				path=path.reshape(int(len(path)/2),2)
 				for k in range(0,len(path)):
 					paths[i][j][k]=path[k]
-	
+	print("Loaded all the paths successfully")
 					
 
 	dataset=[]
@@ -91,7 +93,7 @@ def load_dataset(N=100,NP=4000):
 					targets.append(paths[i][j][m+1])
 					dataset.append(data)
 			
-	data=zip(dataset,targets)
+	data=list(zip(dataset,targets))
 	random.shuffle(data)	
 	dataset,targets=zip(*data)
 	return 	np.asarray(dataset),np.asarray(targets) 
@@ -102,10 +104,10 @@ def load_dataset(N=100,NP=4000):
 def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 
 	obc=np.zeros((N,7,2),dtype=np.float32)
-	temp=np.fromfile('../../dataset/obs.dat')
+	temp=np.fromfile(dataset_path + '/obs.dat')
 	obs=temp.reshape(len(temp)/2,2)
 
-	temp=np.fromfile('../../dataset/obs_perm2.dat',np.int32)
+	temp=np.fromfile(dataset_path + '/obs_perm2.dat',np.int32)
 	perm=temp.reshape(77520,7)
 
 	## loading obstacles
@@ -123,7 +125,7 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 	obs_rep=np.zeros((N,28),dtype=np.float32)	
 	k=0
 	for i in range(s,s+N):
-		temp=np.fromfile('../../dataset/obs_cloud/obc'+str(i)+'.dat')
+		temp=np.fromfile(dataset_path + '/obs_cloud/obc'+str(i)+'.dat')
 		temp=temp.reshape(len(temp)/2,2)
 		obstacles=np.zeros((1,2800),dtype=np.float32)
 		obstacles[0]=temp.flatten()
@@ -138,10 +140,10 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 	path_lengths=np.zeros((N,NP),dtype=np.int8)
 	for i in range(0,N):
 		for j in range(0,NP):
-			fname='../../dataset/e'+str(i+s)+'/path'+str(j+sp)+'.dat'
+			fname=dataset_path + '/e'+str(i+s)+'/path'+str(j+sp)+'.dat'
 			if os.path.isfile(fname):
 				path=np.fromfile(fname)
-				path=path.reshape(len(path)/2,2)
+				path=path.reshape(int(len(path)/2),2)
 				path_lengths[i][j]=len(path)	
 				if len(path)> max_length:
 					max_length=len(path)
@@ -151,10 +153,10 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 
 	for i in range(0,N):
 		for j in range(0,NP):
-			fname='../../dataset/e'+str(i+s)+'/path'+str(j+sp)+'.dat'
+			fname=dataset_path + '/e'+str(i+s)+'/path'+str(j+sp)+'.dat'
 			if os.path.isfile(fname):
 				path=np.fromfile(fname)
-				path=path.reshape(len(path)/2,2)
+				path=path.reshape(int(len(path)/2),2)
 				for k in range(0,len(path)):
 					paths[i][j][k]=path[k]
 	

@@ -34,10 +34,15 @@ def main(args):
     
     
 	# Build data loader
+	print("Loading dataset")
 	dataset,targets= load_dataset() 
+	# dataset,targets= load_dataset(N = 1, NP = 1) 
+	print("Dataset loaded")
 	
 	# Build the models
+	print("Building model")
 	mlp = MLP(args.input_size, args.output_size)
+	print("Model built")
     
 	if torch.cuda.is_available():
 		mlp.cuda()
@@ -48,11 +53,11 @@ def main(args):
     
 	# Train the Models
 	total_loss=[]
-	print len(dataset)
-	print len(targets)
+	print(f"dataset size: {len(dataset)}")
+	print(f"targets size: {len(targets)}")
 	sm=100 # start saving models after 100 epochs
 	for epoch in range(args.num_epochs):
-		print "epoch" + str(epoch)
+		print("epoch" + str(epoch))
 		avg_loss=0
 		for i in range (0,len(dataset),args.batch_size):
 			# Forward, Backward and Optimize
@@ -62,11 +67,11 @@ def main(args):
 			bt=to_var(bt)
 			bo = mlp(bi)
 			loss = criterion(bo,bt)
-			avg_loss=avg_loss+loss.data[0]
+			avg_loss=avg_loss+loss.item()
 			loss.backward()
 			optimizer.step()
-		print "--average loss:"
-		print avg_loss/(len(dataset)/args.batch_size)
+		print("--average loss:")
+		print(avg_loss/(len(dataset)/args.batch_size))
 		total_loss.append(avg_loss/(len(dataset)/args.batch_size))
 		# Save the models
 		if epoch==sm:

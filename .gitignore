@@ -1,0 +1,11 @@
+/venv
+/.vscode
+/.DS_Store
+*__pycache__
+/build
+/dist
+/docs/_build
+/node_modules
+/venv
+/models
+total_loss.dat

@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 import torchvision
-from torch import nn
+from torch import nn,Tensor
 from torch.autograd import Variable
 from data_loader import load_dataset
 
@@ -10,7 +10,15 @@ from data_loader import load_dataset
 class Encoder(nn.Module):
 	def __init__(self):
 		super(Encoder, self).__init__()
-		self.encoder = nn.Sequential(nn.Linear(2800, 512),nn.PReLU(),nn.Linear(512, 256),nn.PReLU(),nn.Linear(256, 128),nn.PReLU(),nn.Linear(128, 28))
+		self.encoder:nn.Sequential = nn.Sequential(
+			nn.Linear(2800, 512),
+			nn.PReLU(),
+			nn.Linear(512, 256),
+			nn.PReLU(),
+			nn.Linear(256, 128),
+			nn.PReLU(),
+			nn.Linear(128, 28)
+		)
 			
 	def forward(self, x):
 		x = self.encoder(x)
@@ -29,7 +37,7 @@ class Decoder(nn.Module):
 mse_loss = nn.MSELoss()
 lam=1e-3
 def loss_function(W, x, recons_x, h):
-	mse = mse_loss(recons_x, x)
+	mse:nn.MSELoss = mse_loss(recons_x, x)
 	"""
 	W is shape of N_hidden x N. So, we do not need to transpose it as opposed to http://wiseodd.github.io/techblog/2016/12/05/contractive-autoencoder/
 	"""
@@ -57,7 +65,7 @@ def main(args):
 	optimizer = torch.optim.Adagrad(params)
 	total_loss=[]
 	for epoch in range(args.num_epochs):
-		print "epoch" + str(epoch)
+		print("epoch" + str(epoch))
 		avg_loss=0
 		for i in range(0, len(obs), args.batch_size):
 			decoder.zero_grad()
@@ -67,34 +75,36 @@ def main(args):
 			else:
 				inp = obs[i:]
 			inp=torch.from_numpy(inp)
-			inp =Variable(inp).cuda()
+			if torch.cuda.is_available():
+				inp =Variable(inp).cuda()
 			# ===================forward=====================
 			h = encoder(inp)
 			output = decoder(h)
 			keys=encoder.state_dict().keys()
-			W=encoder.state_dict()['encoder.6.weight'] # regularize or contracting last layer of encoder. Print keys to displace the layers name. 
-			loss = loss_function(W,inp,output,h)
-			avg_loss=avg_loss+loss.data[0]
+			W=encoder.state_dict()['encoder.6.weight'] # regularize or contracting last layer of encoder. print(keys to displace the layers name. )
+			loss:Tensor = loss_function(W,inp,output,h)
+			avg_loss=avg_loss+loss.item()
 			# ===================backward====================
 			loss.backward()
 			optimizer.step()
-		print "--average loss:"
-		print avg_loss/(len(obs)/args.batch_size)
+		print("--average loss:")
+		print(avg_loss/(len(obs)/args.batch_size))
 		total_loss.append(avg_loss/(len(obs)/args.batch_size))
 
 	avg_loss=0
 	for i in range(len(obs)-5000, len(obs), args.batch_size):
 		inp = obs[i:i+args.batch_size]
 		inp=torch.from_numpy(inp)
-		inp =Variable(inp).cuda()
+		if torch.cuda.is_available():
+			inp =Variable(inp).cuda()
 		# ===================forward=====================
 		output = encoder(inp)
 		output = decoder(output)
 		loss = mse_loss(output,inp)
-		avg_loss=avg_loss+loss.data[0]
+		avg_loss=avg_loss+loss.item()
 		# ===================backward====================
-	print "--Validation average loss:"
-	print avg_loss/(5000/args.batch_size)
+	print("--Validation average loss:")
+	print(avg_loss/(5000/args.batch_size))
 
 
     
