@@ -9,3 +9,5 @@
 /venv
 /models
 total_loss.dat
+*.pkl
+*.p

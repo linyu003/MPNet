@@ -35,8 +35,8 @@ def main(args):
     
 	# Build data loader
 	print("Loading dataset")
-	dataset,targets= load_dataset() 
-	# dataset,targets= load_dataset(N = 1, NP = 1) 
+	# dataset,targets= load_dataset() 
+	dataset,targets= load_dataset(N = 1, NP = 1) 
 	print("Dataset loaded")
 	
 	# Build the models

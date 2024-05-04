@@ -37,7 +37,28 @@ def IsInCollision(x,idx):
 	return False
 
 
-def steerTo (start, end, idx):
+def steerTo (start, end, idx) -> bool:
+	'''
+	The function is designed to determine whether a path from a start point to an end point is clear, without intersecting any obstacles.
+
+	Function arguments:
+	start: Starting coordinate, a numpy array of length 2.
+	end: Ending coordinate, a numpy array of length 2.
+	idx: Index of the obstacle.
+	Return values:
+	Returns 1 if the path is clear and does not intersect with any obstacles.
+	Returns 0 if the path is obstructed or intersects with any obstacles.
+	The main steps of the function are as follows:
+
+	Calculates the distances in both dimensions between the start and end points.
+	Computes the total distance between the start and end points.
+	Divides the total distance into multiple segments based on a discretization step.
+	Calculates the component of each segment's distance in both dimensions.
+	Progresses incrementally from the start point towards the end point, one segment at a time.
+	Checks before each incremental move if the current state intersects with an obstacle; if it does, returns 0.
+	Checks if the end point intersects with an obstacle; if it does, returns 0.
+	If the path is clear without intersecting any obstacles, returns 1.
+	'''
 
 	DISCRETIZATION_STEP=0.01
 	dists=np.zeros(2,dtype=np.float32)
@@ -279,7 +300,7 @@ def main(args):
 				step=0	
 				path=[] # stores end2end path by concatenating path1 and path2
 				tree=0	
-				tic = time.clock()	
+				tic = time.perf_counter()
 				while target_reached==0 and step<80 :
 					step=step+1
 					if tree==0:
@@ -309,7 +330,7 @@ def main(args):
 					path=lvc(path,i)
 					indicator=feasibility_check(path,i)
 					if indicator==1:
-						toc = time.clock()
+						toc = time.perf_counter()
 						t=toc-tic
 						et.append(t)
 						fp=fp+1

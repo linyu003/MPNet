@@ -14,6 +14,8 @@ import math
 
 dataset_path = '../dataset2'
 
+models_path = './models'
+
 class Encoder(nn.Module):
 	def __init__(self):
 		super(Encoder, self).__init__()
@@ -27,7 +29,7 @@ class Encoder(nn.Module):
 def load_dataset(N=100,NP=4000):
 
 	Q = Encoder()
-	Q.load_state_dict(torch.load('./models/cae_encoder.pkl'))
+	Q.load_state_dict(torch.load(models_path + '/cae_encoder.pkl'))
 	if torch.cuda.is_available():
 		Q.cuda()
 
@@ -76,7 +78,7 @@ def load_dataset(N=100,NP=4000):
 	print("Loaded all the paths successfully")
 					
 
-	dataset=[]
+	dataset:list[np.ndarray[np.float32]]=[]
 	targets=[]
 	for i in range(0,N):
 		for j in range(0,NP):
@@ -92,6 +94,7 @@ def load_dataset(N=100,NP=4000):
 						
 					targets.append(paths[i][j][m+1])
 					dataset.append(data)
+	
 			
 	data=list(zip(dataset,targets))
 	random.shuffle(data)	
@@ -105,7 +108,7 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 
 	obc=np.zeros((N,7,2),dtype=np.float32)
 	temp=np.fromfile(dataset_path + '/obs.dat')
-	obs=temp.reshape(len(temp)/2,2)
+	obs=temp.reshape(int(len(temp)/2),2)
 
 	temp=np.fromfile(dataset_path + '/obs_perm2.dat',np.int32)
 	perm=temp.reshape(77520,7)
@@ -118,7 +121,7 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 	
 					
 	Q = Encoder()
-	Q.load_state_dict(torch.load('../models/cae_encoder.pkl'))
+	Q.load_state_dict(torch.load(models_path + '/cae_encoder.pkl'))
 	if torch.cuda.is_available():
 		Q.cuda()
 	
@@ -126,11 +129,12 @@ def load_test_dataset(N=100,NP=200, s=0,sp=4000):
 	k=0
 	for i in range(s,s+N):
 		temp=np.fromfile(dataset_path + '/obs_cloud/obc'+str(i)+'.dat')
-		temp=temp.reshape(len(temp)/2,2)
+		temp=temp.reshape(int(len(temp)/2),2)
 		obstacles=np.zeros((1,2800),dtype=np.float32)
 		obstacles[0]=temp.flatten()
 		inp=torch.from_numpy(obstacles)
-		inp=Variable(inp).cuda()
+		if torch.cuda.is_available():
+			inp=Variable(inp).cuda()
 		output=Q(inp)
 		output=output.data.cpu()
 		obs_rep[k]=output.numpy()
